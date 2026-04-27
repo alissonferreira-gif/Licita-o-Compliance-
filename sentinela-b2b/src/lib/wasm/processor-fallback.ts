@@ -225,3 +225,129 @@ export function estimateCredit(valorProduto: number, ncm: string) {
   const cofins = Math.round(valorProduto * COFINS_STD * 100) / 100;
   return { monofasico: true, pis, cofins, total: pis + cofins };
 }
+
+// ─────────────────────────────────────────────────────────────
+// MÓDULO REVISOR BANCÁRIO
+// ─────────────────────────────────────────────────────────────
+
+// Taxas médias BACEN 2024/2025 (% a.m.)
+const BACEN_RATES_MONTHLY: Record<string, number> = {
+  capital_giro: 1.62,
+  cheque_especial_pj: 6.84,
+  antecipacao_recebiveis: 1.22,
+  cdc_pj: 1.88,
+  financiamento_equipamentos: 1.25,
+  credito_pessoal_pf: 3.50,
+  consignado_pf: 1.73,
+};
+
+export function toAnnualRate(monthlyPct: number): number {
+  return (Math.pow(1 + monthlyPct / 100, 12) - 1) * 100;
+}
+
+export function calcParcelaTabelaPrice(
+  pv: number,
+  rPct: number,
+  n: number
+): number {
+  if (n <= 0 || pv <= 0) return 0;
+  const r = rPct / 100;
+  if (r < 1e-9) return pv / n;
+  const factor = Math.pow(1 + r, n);
+  return pv * (r * factor) / (factor - 1);
+}
+
+export interface LoanAnalysisResult {
+  parcela_cobrada: number;
+  parcela_justa: number;
+  excesso_por_parcela: number;
+  excesso_total: number;
+  total_pago_contrato: number;
+  total_justo_contrato: number;
+  taxa_mensal_contrato: number;
+  taxa_anual_contrato: number;
+  taxa_cet_anual: number;
+  taxa_bacen_referencia: number;
+  taxa_bacen_anual: number;
+  has_anatocismo: boolean;
+  taxa_abusiva: boolean;
+  tipo_credito: string;
+  status: string;
+}
+
+export interface AmortizationRow {
+  mes: number;
+  parcela: number;
+  juros: number;
+  amortizacao: number;
+  saldo: number;
+}
+
+export function analyzeLoan(
+  valorEmprestimo: number,
+  taxaMensalPct: number,
+  prazoMeses: number,
+  taxaCetAnualPct: number,
+  tipoCredito: string
+): LoanAnalysisResult {
+  const bacenMonthly = BACEN_RATES_MONTHLY[tipoCredito] ?? 1.62;
+  const bacenAnual = toAnnualRate(bacenMonthly);
+  const taxaAnualContrato = toAnnualRate(taxaMensalPct);
+  const taxaCet = taxaCetAnualPct > 0 ? taxaCetAnualPct : taxaAnualContrato;
+
+  const parcelaCobrada = calcParcelaTabelaPrice(valorEmprestimo, taxaMensalPct, prazoMeses);
+  const parcelaJusta = calcParcelaTabelaPrice(valorEmprestimo, bacenMonthly, prazoMeses);
+  const excessoPorParcela = Math.max(0, parcelaCobrada - parcelaJusta);
+
+  // Anatocismo: CET anual > taxa composta esperada da taxa mensal em > 2 p.p.
+  const expectedAnnual = taxaAnualContrato;
+  const hasAnatocismo = taxaCetAnualPct > 0 && (taxaCetAnualPct - expectedAnnual) > 2.0;
+
+  // Taxa abusiva: > 50% acima da taxa BACEN
+  const taxaAbusiva = taxaAnualContrato > bacenAnual * 1.5;
+
+  return {
+    parcela_cobrada: Math.round(parcelaCobrada * 100) / 100,
+    parcela_justa: Math.round(parcelaJusta * 100) / 100,
+    excesso_por_parcela: Math.round(excessoPorParcela * 100) / 100,
+    excesso_total: Math.round(excessoPorParcela * prazoMeses * 100) / 100,
+    total_pago_contrato: Math.round(parcelaCobrada * prazoMeses * 100) / 100,
+    total_justo_contrato: Math.round(parcelaJusta * prazoMeses * 100) / 100,
+    taxa_mensal_contrato: taxaMensalPct,
+    taxa_anual_contrato: Math.round(taxaAnualContrato * 100) / 100,
+    taxa_cet_anual: Math.round(taxaCet * 100) / 100,
+    taxa_bacen_referencia: bacenMonthly,
+    taxa_bacen_anual: Math.round(bacenAnual * 100) / 100,
+    has_anatocismo: hasAnatocismo,
+    taxa_abusiva: taxaAbusiva,
+    tipo_credito: tipoCredito,
+    status: prazoMeses <= 0 || valorEmprestimo <= 0 ? "INVALID_PARAMS" : "OK",
+  };
+}
+
+export function buildAmortizationTable(
+  pv: number,
+  rPct: number,
+  n: number,
+  maxRows = 12
+): AmortizationRow[] {
+  const r = rPct / 100;
+  const parcela = calcParcelaTabelaPrice(pv, rPct, n);
+  let saldo = pv;
+  const rows: AmortizationRow[] = [];
+  const limit = Math.min(n, maxRows);
+
+  for (let i = 1; i <= limit; i++) {
+    const juros = saldo * r;
+    const amortizacao = parcela - juros;
+    saldo -= amortizacao;
+    rows.push({
+      mes: i,
+      parcela: Math.round(parcela * 100) / 100,
+      juros: Math.round(juros * 100) / 100,
+      amortizacao: Math.round(amortizacao * 100) / 100,
+      saldo: Math.round(Math.max(0, saldo) * 100) / 100,
+    });
+  }
+  return rows;
+}

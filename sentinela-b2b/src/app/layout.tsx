@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SENTINELA B2B | Capital Recovery Ecosystem",
+  title: "SENTINELA OMNI | Capital Recovery Ecosystem",
   description:
-    "Recupere créditos tributários PIS/COFINS e conquiste contratos públicos com IA",
+    "Recupere créditos tributários, conquiste contratos públicos e elimine juros abusivos com IA",
 };
 
 export default function RootLayout({

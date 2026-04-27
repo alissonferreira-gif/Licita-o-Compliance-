@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getLicitacaoPrompt, getBankingAuditPrompt } from "@/lib/gemini/prompts";
+import { getLicitacaoPrompt, getBankingAuditPrompt, getContractAuditPrompt } from "@/lib/gemini/prompts";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -33,7 +33,10 @@ export async function POST(req: NextRequest) {
   }
 
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const prompt = mode === "bancaria" ? getBankingAuditPrompt() : getLicitacaoPrompt();
+  const prompt =
+    mode === "bancaria" ? getBankingAuditPrompt() :
+    mode === "contrato" ? getContractAuditPrompt() :
+    getLicitacaoPrompt();
 
   try {
     const bytes = await file.arrayBuffer();

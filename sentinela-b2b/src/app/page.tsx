@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TopBar } from "@/components/layout/TopBar";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { RecoveryChart } from "@/components/dashboard/RecoveryChart";
+import { ImpactPanel } from "@/components/dashboard/ImpactPanel";
 import {
   Shield,
   Crosshair,
@@ -11,9 +12,9 @@ import {
   Building2,
   ArrowRight,
   Zap,
+  BanknoteIcon,
 } from "lucide-react";
 
-// Static demo data — replaced by Supabase queries once auth is configured
 const demoChartData = [
   { month: "Jan", recuperado: 0, contratos: 0 },
   { month: "Fev", recuperado: 0, contratos: 0 },
@@ -26,7 +27,7 @@ const quickActions = [
     href: "/auditoria-fiscal",
     icon: Shield,
     label: "Auditar NFe",
-    desc: "Upload de XML para calcular créditos PIS/COFINS",
+    desc: "Upload de XML para calcular créditos PIS/COFINS monofásico",
     accent: "border-profit/20 hover:border-profit/50 hover:bg-profit/5",
     iconBg: "bg-profit/10 text-profit",
     tag: "DEFESA",
@@ -36,17 +37,28 @@ const quickActions = [
     href: "/licitacoes",
     icon: Crosshair,
     label: "Analisar Edital",
-    desc: "Upload de PDF para análise de cláusulas restritivas",
+    desc: "Upload de PDF para análise de cláusulas restritivas (Lei 14.133/2021)",
     accent: "border-border hover:border-profit/40 hover:bg-white/2",
     iconBg: "bg-background text-muted",
     tag: "ATAQUE",
     tagColor: "text-profit",
   },
   {
+    href: "/revisao-contrato",
+    icon: BanknoteIcon,
+    label: "Revisar Contrato",
+    desc: "Scanner de juros abusivos, anatocismo e venda casada",
+    accent: "border-risk/20 hover:border-risk/40 hover:bg-risk/5",
+    iconBg: "bg-risk/10 text-risk",
+    tag: "NOVO",
+    tagColor: "text-profit",
+    badge: true,
+  },
+  {
     href: "/auditoria-bancaria",
     icon: Building2,
     label: "Auditar Extrato",
-    desc: "Detecta tarifas bancárias cobradas indevidamente",
+    desc: "Detecta tarifas bancárias cobradas indevidamente (Res. CMN 3.919)",
     accent: "border-border hover:border-profit/40 hover:bg-white/2",
     iconBg: "bg-background text-muted",
     tag: "DEFESA",
@@ -57,7 +69,7 @@ const quickActions = [
 export default function DashboardPage() {
   return (
     <div className="flex flex-col min-h-full">
-      <TopBar title="Dashboard" subtitle="Visão geral do seu capital recuperável" />
+      <TopBar title="Dashboard" subtitle="Painel de impacto — SENTINELA OMNI" />
 
       <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
         {/* Welcome banner */}
@@ -67,15 +79,14 @@ export default function DashboardPage() {
               <Zap className="w-5 h-5 text-profit" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">
-                Bem-vindo ao SENTINELA B2B
+              <h1 className="text-lg font-bold text-foreground font-mono">
+                SENTINELA OMNI
               </h1>
               <p className="text-sm text-subtle mt-1 max-w-xl">
                 <span className="text-profit font-semibold">
-                  Nós encontramos o dinheiro que sua empresa esqueceu na mesa.
+                  Recuperamos o dinheiro que sua empresa esqueceu na mesa.
                 </span>{" "}
-                Seja no imposto pago a mais ou no contrato que você não venceu.
-                Comece fazendo upload de uma NFe ou um edital.
+                Auditoria fiscal, análise de licitações e revisão de contratos bancários — tudo em um só lugar.
               </p>
             </div>
           </div>
@@ -86,6 +97,14 @@ export default function DashboardPage() {
             Configurar
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
+        </div>
+
+        {/* Impact Panel — 3 modules */}
+        <div>
+          <h2 className="text-xs font-bold text-muted uppercase tracking-widest mb-3">
+            Painel de Impacto
+          </h2>
+          <ImpactPanel />
         </div>
 
         {/* KPI Row */}
@@ -129,7 +148,7 @@ export default function DashboardPage() {
           <h2 className="text-base font-semibold text-foreground mb-4">
             Começar agora
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action) => (
               <Link
                 key={action.href}
@@ -143,7 +162,7 @@ export default function DashboardPage() {
                     <action.icon className="w-5 h-5" />
                   </div>
                   <span
-                    className={`text-[10px] font-bold tracking-widest ${action.tagColor}`}
+                    className={`text-[10px] font-bold tracking-widest ${action.tagColor} ${action.badge ? "bg-profit text-background px-1.5 py-0.5 rounded-full text-[9px]" : ""}`}
                   >
                     {action.tag}
                   </span>
@@ -166,44 +185,38 @@ export default function DashboardPage() {
         {/* How it works */}
         <div className="bg-surface border border-border rounded-2xl p-6">
           <h2 className="text-base font-semibold text-foreground mb-5">
-            Como o SENTINELA funciona
+            Como o SENTINELA OMNI funciona
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
                 step: "01",
                 title: "Faça upload do arquivo",
-                desc: "XML de NFe para auditoria fiscal ou PDF de edital para análise de licitação",
+                desc: "XML de NFe para auditoria fiscal, PDF de edital para licitação, ou contrato/extrato para revisão bancária",
                 color: "text-profit",
               },
               {
                 step: "02",
                 title: "Engine processa instantaneamente",
-                desc: "C++/WASM analisa XMLs localmente (zero dados enviados). Gemini AI analisa PDFs via API segura",
+                desc: "C++/WASM analisa XMLs localmente (zero dados enviados). Gemini AI analisa PDFs com expertise jurídica especializada",
                 color: "text-risk",
               },
               {
                 step: "03",
                 title: "Receba o relatório",
-                desc: "Valor recuperável detalhado por NCM, ou impugnações juridicamente fundamentadas prontas para protocolar",
+                desc: "Valor recuperável por NCM, impugnações juridicamente fundamentadas prontas para protocolar, ou cálculo de juros abusivos contestáveis",
                 color: "text-profit",
               },
             ].map((s) => (
               <div key={s.step} className="flex gap-4">
                 <div className="shrink-0">
-                  <span
-                    className={`text-3xl font-black opacity-20 ${s.color}`}
-                  >
+                  <span className={`text-3xl font-black opacity-20 ${s.color}`}>
                     {s.step}
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {s.title}
-                  </p>
-                  <p className="text-xs text-muted mt-1 leading-relaxed">
-                    {s.desc}
-                  </p>
+                  <p className="text-sm font-semibold text-foreground">{s.title}</p>
+                  <p className="text-xs text-muted mt-1 leading-relaxed">{s.desc}</p>
                 </div>
               </div>
             ))}

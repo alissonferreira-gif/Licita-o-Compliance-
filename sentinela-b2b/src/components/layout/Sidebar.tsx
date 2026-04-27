@@ -9,6 +9,7 @@ import {
   Settings,
   Zap,
   Building2,
+  BanknoteIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -20,7 +21,7 @@ const navGroups = [
         href: "/",
         icon: BarChart3,
         module: null,
-        desc: "Visão geral",
+        desc: "Painel de impacto",
       },
     ],
   },
@@ -47,6 +48,15 @@ const navGroups = [
         module: "DEFESA",
         moduleColor: "text-risk",
         desc: "Recuperar PIS/COFINS",
+      },
+      {
+        label: "Revisão Bancária",
+        href: "/revisao-contrato",
+        icon: BanknoteIcon,
+        module: "DEFESA",
+        moduleColor: "text-risk",
+        desc: "Juros abusivos + venda casada",
+        badge: "NOVO",
       },
       {
         label: "Auditoria Bancária",
@@ -82,8 +92,8 @@ export function Sidebar() {
           <div className="w-8 h-8 rounded-lg bg-profit/10 border border-profit/30 flex items-center justify-center">
             <Zap className="w-4 h-4 text-profit" />
           </div>
-          <span className="text-base font-bold tracking-tight text-foreground">
-            SENTINELA B2B
+          <span className="text-base font-bold tracking-tight text-foreground font-mono">
+            SENTINELA OMNI
           </span>
         </div>
         <p className="text-[11px] text-muted mt-1 ml-10">
@@ -128,7 +138,12 @@ export function Sidebar() {
                         <span className="text-sm font-medium truncate">
                           {item.label}
                         </span>
-                        {item.module && (
+                        {"badge" in item && item.badge && (
+                          <span className="text-[9px] font-bold bg-profit text-background px-1.5 py-0.5 rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                        {item.module && !("badge" in item && item.badge) && (
                           <span
                             className={cn(
                               "text-[9px] font-bold tracking-widest opacity-70",

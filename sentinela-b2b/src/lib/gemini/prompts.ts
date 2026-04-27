@@ -54,6 +54,51 @@ Regras:
 - NUNCA retorne markdown, apenas JSON puro`;
 }
 
+export function getContractAuditPrompt(): string {
+  return `Você é um advogado especialista em Direito Bancário e Direito do Consumidor, com profundo conhecimento da Súmula 121 do STF (anatocismo), Código de Defesa do Consumidor (CDC), Resolução CMN 3.919/2010 e jurisprudência do STJ sobre juros abusivos.
+
+Analise o contrato bancário ou proposta de crédito fornecida e identifique:
+1. Anatocismo: capitalização de juros sobre juros (Súmula 121 STF)
+2. Taxa de juros acima de 50% da taxa média BACEN para a mesma modalidade
+3. Venda casada: contratação compulsória de seguros, títulos de capitalização ou outros produtos (Art. 39, I do CDC)
+4. TAC/TEC ilegais: Tarifa de Abertura de Crédito e Tarifa de Emissão de Carnê vedadas pela Res. CMN 3.518/2007
+5. CET (Custo Efetivo Total) declarado maior que o esperado pela taxa mensal
+6. Cláusulas de vencimento antecipado abusivas
+
+Retorne EXCLUSIVAMENTE um objeto JSON válido:
+
+{
+  "banco": "nome do banco/instituição",
+  "tipo_produto": "nome do produto de crédito",
+  "tipo_credito": "capital_giro | cheque_especial_pj | antecipacao_recebiveis | cdc_pj | financiamento_equipamentos | credito_pessoal_pf | consignado_pf",
+  "valor_contrato": 0.00,
+  "taxa_mensal_contrato": 0.00,
+  "taxa_anual_contrato": 0.00,
+  "cet_anual_declarado": 0.00,
+  "prazo_meses": 0,
+  "irregularidades": [
+    {
+      "tipo": "anatocismo | juros_abusivos | venda_casada | tac_tec_ilegal | cet_divergente | clausula_abusiva",
+      "descricao": "descrição detalhada da irregularidade encontrada",
+      "trecho_contrato": "trecho literal do contrato que evidencia a irregularidade",
+      "impacto_estimado": 0.00,
+      "base_legal": "Súmula X STF / Art. Y do CDC / Res. CMN X.XXX/AAAA",
+      "severidade": "low | medium | high | critical"
+    }
+  ],
+  "valor_total_contestavel": 0.00,
+  "recomendacoes": ["ação recomendada 1", "ação recomendada 2"],
+  "fundamentacao_acao_judicial": "texto de 3-5 linhas com fundamentação para ação revisional, em linguagem jurídica formal",
+  "resumo": "2-3 frases sobre os achados e potencial de recuperação"
+}
+
+Regras:
+- Se não encontrar irregularidades, retorne irregularidades como array vazio e valor_total_contestavel como 0
+- Para juros abusivos, compare com taxa BACEN: capital_giro=1.62%a.m., cheque_especial_pj=6.84%a.m., antecipacao_recebiveis=1.22%a.m., cdc_pj=1.88%a.m., credito_pessoal_pf=3.50%a.m., consignado_pf=1.73%a.m.
+- Anatocismo: CET anual > taxa composta esperada da taxa mensal por mais de 2 pontos percentuais
+- NUNCA retorne markdown, apenas JSON puro`;
+}
+
 export function getBankingAuditPrompt(): string {
   return `Você é um especialista em tarifas bancárias e regulamentação do Banco Central do Brasil, com conhecimento da Resolução CMN 3.919/2010 e demais normas do BACEN.
 

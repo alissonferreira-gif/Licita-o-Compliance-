@@ -93,7 +93,7 @@ export function SmartDropzone({
     <div
       {...getRootProps()}
       className={cn(
-        "relative border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer",
+        "relative border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden",
         "flex flex-col items-center justify-center min-h-72 p-10",
         "select-none",
         isDragActive || dragOver
@@ -104,6 +104,14 @@ export function SmartDropzone({
       )}
     >
       <input {...getInputProps()} />
+
+      {/* Laser scanning effect — active during processing */}
+      {processing && (
+        <>
+          <div className="laser-line" />
+          <div className="laser-glow" />
+        </>
+      )}
 
       {/* Idle / drag state */}
       {!processing && (

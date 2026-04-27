@@ -447,11 +447,163 @@ std::string estimateCredit(double valorProduto, const std::string& ncm) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 7. EMSCRIPTEN BINDINGS
+// 7. MÓDULO REVISOR BANCÁRIO — Análise de contratos de crédito
+// ─────────────────────────────────────────────────────────────
+
+// Taxas médias de mercado BACEN (referência 2024/2025)
+// Fonte: Nota de Política Monetária BACEN — Tabela 20
+// Valores em % a.m. (ao mês)
+const std::map<std::string, double> BACEN_RATES_MONTHLY = {
+  {"capital_giro",              1.62},  // ~21% a.a.
+  {"cheque_especial_pj",        6.84},  // ~125% a.a.
+  {"antecipacao_recebiveis",    1.22},  // ~15.7% a.a.
+  {"cdc_pj",                    1.88},  // ~25% a.a.
+  {"financiamento_equipamentos",1.25},  // ~16% a.a.
+  {"credito_pessoal_pf",        3.50},  // ~51% a.a. (PF)
+  {"consignado_pf",             1.73},  // ~22.9% a.a.
+};
+
+// Converte taxa mensal (%) → anual efetiva (%)
+double toAnnualRate(double monthly_pct) {
+  return (std::pow(1.0 + monthly_pct / 100.0, 12.0) - 1.0) * 100.0;
+}
+
+// Calcula parcela pela Tabela Price (sistema francês)
+// PV = valor do empréstimo, r = taxa mensal %, n = prazo meses
+double calcParcelaTabelaPrice(double pv, double r_pct, int n) {
+  if (n <= 0 || pv <= 0.0) return 0.0;
+  double r = r_pct / 100.0;
+  if (r < 1e-9) return pv / n;
+  double factor = std::pow(1.0 + r, n);
+  return pv * (r * factor) / (factor - 1.0);
+}
+
+// Calcula total pago em um contrato Tabela Price
+double calcTotalPago(double pv, double r_pct, int n) {
+  return calcParcelaTabelaPrice(pv, r_pct, n) * n;
+}
+
+// Detecta capitalização de juros (anatocismo)
+// Ocorre quando a taxa efetiva anual declarada difere da esperada
+// pela composição da taxa mensal (Súmula 121 STF)
+bool detectAnatocismo(double taxa_mensal_pct, double taxa_cet_anual_pct) {
+  if (taxa_cet_anual_pct <= 0.0 || taxa_mensal_pct <= 0.0) return false;
+  double expected_annual = toAnnualRate(taxa_mensal_pct);
+  // Se CET anual > taxa composta esperada em mais de 2 p.p., há capitalização irregular
+  return (taxa_cet_anual_pct - expected_annual) > 2.0;
+}
+
+struct LoanAnalysisResult {
+  double parcela_cobrada;
+  double parcela_justa;        // à taxa BACEN média
+  double excesso_por_parcela;
+  double excesso_total;         // ao longo de todo o prazo
+  double total_pago_contrato;
+  double total_justo_contrato;  // total à taxa BACEN
+  double taxa_mensal_contrato;
+  double taxa_cet_anual;        // custo efetivo total
+  double taxa_bacen_referencia; // taxa média BACEN p/ este tipo
+  double taxa_anual_contrato;
+  bool   has_anatocismo;
+  bool   taxa_abusiva;          // > 50% acima da taxa BACEN
+  std::string tipo_credito;
+  std::string status;
+};
+
+std::string analyzeLoan(
+    double valor_emprestimo,
+    double taxa_mensal_pct,
+    int    prazo_meses,
+    double taxa_cet_anual_pct,
+    const std::string& tipo_credito) {
+
+  LoanAnalysisResult r;
+  r.tipo_credito        = tipo_credito;
+  r.taxa_mensal_contrato = taxa_mensal_pct;
+  r.taxa_cet_anual      = taxa_cet_anual_pct > 0 ? taxa_cet_anual_pct : toAnnualRate(taxa_mensal_pct);
+  r.taxa_anual_contrato = toAnnualRate(taxa_mensal_pct);
+  r.status              = "OK";
+
+  // Taxa BACEN de referência para o tipo de crédito
+  auto it = BACEN_RATES_MONTHLY.find(tipo_credito);
+  r.taxa_bacen_referencia = (it != BACEN_RATES_MONTHLY.end()) ? it->second : 1.62;
+
+  // Cálculo de parcelas
+  r.parcela_cobrada      = calcParcelaTabelaPrice(valor_emprestimo, taxa_mensal_pct, prazo_meses);
+  r.parcela_justa        = calcParcelaTabelaPrice(valor_emprestimo, r.taxa_bacen_referencia, prazo_meses);
+  r.excesso_por_parcela  = std::max(0.0, r.parcela_cobrada - r.parcela_justa);
+  r.excesso_total        = r.excesso_por_parcela * prazo_meses;
+  r.total_pago_contrato  = r.parcela_cobrada * prazo_meses;
+  r.total_justo_contrato = r.parcela_justa * prazo_meses;
+
+  // Detecção de anatocismo
+  r.has_anatocismo = detectAnatocismo(taxa_mensal_pct, taxa_cet_anual_pct);
+
+  // Taxa abusiva: > 50% acima da média BACEN
+  double bacen_annual = toAnnualRate(r.taxa_bacen_referencia);
+  r.taxa_abusiva = (r.taxa_anual_contrato > bacen_annual * 1.5);
+
+  if (r.parcela_cobrada <= 0 || prazo_meses <= 0) {
+    r.status = "INVALID_PARAMS";
+  }
+
+  std::ostringstream j;
+  j << "{";
+  j << "\"parcela_cobrada\":"      << fmtDouble(r.parcela_cobrada) << ",";
+  j << "\"parcela_justa\":"        << fmtDouble(r.parcela_justa) << ",";
+  j << "\"excesso_por_parcela\":"  << fmtDouble(r.excesso_por_parcela) << ",";
+  j << "\"excesso_total\":"        << fmtDouble(r.excesso_total) << ",";
+  j << "\"total_pago_contrato\":"  << fmtDouble(r.total_pago_contrato) << ",";
+  j << "\"total_justo_contrato\":" << fmtDouble(r.total_justo_contrato) << ",";
+  j << "\"taxa_mensal_contrato\":" << fmtDouble(r.taxa_mensal_contrato) << ",";
+  j << "\"taxa_anual_contrato\":"  << fmtDouble(r.taxa_anual_contrato) << ",";
+  j << "\"taxa_cet_anual\":"       << fmtDouble(r.taxa_cet_anual) << ",";
+  j << "\"taxa_bacen_referencia\":" << fmtDouble(r.taxa_bacen_referencia) << ",";
+  j << "\"taxa_bacen_anual\":"     << fmtDouble(toAnnualRate(r.taxa_bacen_referencia)) << ",";
+  j << "\"has_anatocismo\":"       << (r.has_anatocismo ? "true" : "false") << ",";
+  j << "\"taxa_abusiva\":"         << (r.taxa_abusiva ? "true" : "false") << ",";
+  j << "\"tipo_credito\":\""       << jsonEscape(r.tipo_credito) << "\",";
+  j << "\"status\":\""             << jsonEscape(r.status) << "\"";
+  j << "}";
+  return j.str();
+}
+
+// Simulação de amortização completa (primeiras n linhas)
+std::string buildAmortizationTable(double pv, double r_pct, int n, int max_rows) {
+  double r       = r_pct / 100.0;
+  double parcela = calcParcelaTabelaPrice(pv, r_pct, n);
+  double saldo   = pv;
+  int    rows    = std::min(n, max_rows);
+
+  std::ostringstream j;
+  j << "[";
+  for (int i = 1; i <= rows; i++) {
+    double juros        = saldo * r;
+    double amortizacao  = parcela - juros;
+    saldo              -= amortizacao;
+    if (i > 1) j << ",";
+    j << "{";
+    j << "\"mes\":"          << i << ",";
+    j << "\"parcela\":"      << fmtDouble(parcela) << ",";
+    j << "\"juros\":"        << fmtDouble(juros) << ",";
+    j << "\"amortizacao\":"  << fmtDouble(amortizacao) << ",";
+    j << "\"saldo\":"        << fmtDouble(std::max(0.0, saldo));
+    j << "}";
+  }
+  j << "]";
+  return j.str();
+}
+
+// ─────────────────────────────────────────────────────────────
+// 8. EMSCRIPTEN BINDINGS
 // ─────────────────────────────────────────────────────────────
 EMSCRIPTEN_BINDINGS(sentinela_processor) {
-  emscripten::function("analyzeNFeXML",   &analyzeNFeXML);
-  emscripten::function("checkNCM",        &checkNCM);
-  emscripten::function("getNCMInfo",      &getNCMInfo);
-  emscripten::function("estimateCredit",  &estimateCredit);
+  emscripten::function("analyzeNFeXML",          &analyzeNFeXML);
+  emscripten::function("checkNCM",               &checkNCM);
+  emscripten::function("getNCMInfo",             &getNCMInfo);
+  emscripten::function("estimateCredit",         &estimateCredit);
+  // Módulo Revisor Bancário
+  emscripten::function("analyzeLoan",            &analyzeLoan);
+  emscripten::function("buildAmortizationTable", &buildAmortizationTable);
+  emscripten::function("calcParcelaTabelaPrice", &calcParcelaTabelaPrice);
 }
