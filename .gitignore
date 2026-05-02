@@ -59,8 +59,10 @@ firebase.json
 
 # Sensitive keys
 **/android/key.properties
+android/key.properties
 **/*.keystore
 **/*.jks
+upload-keystore.jks
 
 # Node / Functions
 functions/node_modules/

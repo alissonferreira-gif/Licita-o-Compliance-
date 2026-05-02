@@ -143,3 +143,5 @@ export const updateAppStats = functions
 
     functions.logger.info("app_stats/global atualizado");
   });
+
+export { seedKnownSpam } from "./seed";

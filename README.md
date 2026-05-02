@@ -184,34 +184,9 @@ keytool -genkey -v -keystore android/upload-keystore.jks \
   -alias upload
 ```
 
-### 2. Atualize android/app/build.gradle
+### 2. Configure android/key.properties e o build.gradle já está pronto
 
-Adicione a configuração de signing antes do bloco `android {}`:
-```groovy
-def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file('key.properties')
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
-
-android {
-    ...
-    signingConfigs {
-        release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-            storePassword keystoreProperties['storePassword']
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-            ...
-        }
-    }
-}
-```
+O `android/app/build.gradle` já tem a configuração de signing completa. Basta criar o `android/key.properties` com os valores corretos e o `upload-keystore.jks` no lugar indicado. O arquivo de properties **nunca deve ser commitado** (está no `.gitignore`).
 
 ### 3. Gere o APK/AAB
 
@@ -257,6 +232,44 @@ O Google exige justificativa especial para apps que usam `CallScreeningService`.
 - Evidencie que não há gravação de áudio
 - Mencione que segue as diretrizes do Android para apps de proteção contra spam
 - Inclua link para a política de privacidade
+
+---
+
+## Aprovação como Call Screening (Android 10+)
+
+O `CallScreeningService` só funciona se o usuário conceder o papel (Role) de "app de proteção de chamadas". Esse fluxo é implementado automaticamente:
+
+1. No onboarding (última tela), o app chama `RoleManager.createRequestRoleIntent(ROLE_CALL_SCREENING)` via `RoleHandler.kt`
+2. O Android exibe um diálogo nativo pedindo confirmação ao usuário
+3. A resposta retorna via `onActivityResult` → `RoleHandler.handleActivityResult`
+
+Em dispositivos com Android < 10, a tela é pulada automaticamente e o `CallReceiver` (BroadcastReceiver) atua como fallback.
+
+Para verificar / reativar o role manualmente, o usuário pode acessar **Configurações → Status de proteção → Ativar agora**.
+
+---
+
+## Seed inicial (primeira vez)
+
+Após o primeiro deploy das Functions, popule o banco com padrões de spam conhecidos:
+
+```bash
+# Configurar a chave secreta (fazer uma vez)
+firebase functions:config:set admin.seed_key="SUA_CHAVE_SECRETA"
+
+# Ou via variável de ambiente no .env das functions:
+# ADMIN_SEED_KEY=SUA_CHAVE_SECRETA
+
+# Fazer o deploy
+firebase deploy --only functions
+
+# Chamar o endpoint de seed
+curl -X POST \
+  -H "x-admin-key: SUA_CHAVE_SECRETA" \
+  https://southamerica-east1-SEU-PROJETO.cloudfunctions.net/seedKnownSpam
+```
+
+Adicione mais entradas em `functions/src/seed.ts` conforme dados públicos do Procon/Anatel.
 
 ---
 

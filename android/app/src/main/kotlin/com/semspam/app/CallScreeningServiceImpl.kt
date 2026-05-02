@@ -26,9 +26,19 @@ class CallScreeningServiceImpl : CallScreeningService() {
 
         scope.launch {
             try {
-                val classification = withTimeout(1500L) {
-                    checkNumberClassification(normalized)
+                // Cache-first: evita round-trip ao Firestore na maioria das chamadas
+                val cached = LocalNumberCache.get(applicationContext, normalized)
+                val classification = if (cached != null) {
+                    Log.d(TAG, "Cache hit: $normalized (score=${cached.score})")
+                    NumberClassification(cached.score, cached.totalReports)
+                } else {
+                    withTimeout(800L) {
+                        checkNumberClassification(normalized).also { result ->
+                            LocalNumberCache.put(applicationContext, normalized, result.score, result.totalReports)
+                        }
+                    }
                 }
+
                 val autoBlock = isAutoBlockEnabled()
                 val responseBuilder = CallResponse.Builder()
 
@@ -57,7 +67,6 @@ class CallScreeningServiceImpl : CallScreeningService() {
                     classification.score
                 )
             } catch (e: TimeoutCancellationException) {
-                // Timeout: deixa a chamada passar e loga localmente
                 Log.w(TAG, "Timeout ao verificar $normalized — chamada liberada")
                 respondToCall(callDetails, CallResponse.Builder().build())
             } catch (e: Exception) {

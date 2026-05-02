@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,25 +8,47 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/analytics_helper.dart';
+import '../../../../modules/onboarding/services/call_screening_role_service.dart';
+import '../../../../shared/services/consent_service.dart';
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _showOverlay = true;
   bool _autoBlock = false;
   bool _notifyOnBlock = true;
   String _version = '';
+  bool _screeningSupported = false;
+  bool _screeningHeld = false;
 
   @override
   void initState() {
     super.initState();
     _loadPrefs();
     _loadVersion();
+    _checkScreeningRole();
+  }
+
+  Future<void> _checkScreeningRole() async {
+    final supported = await CallScreeningRoleService.isSupported();
+    final held = supported ? await CallScreeningRoleService.isHeld() : false;
+    if (mounted) setState(() {
+      _screeningSupported = supported;
+      _screeningHeld = held;
+    });
+  }
+
+  Future<void> _requestScreeningRole() async {
+    final granted = await CallScreeningRoleService.request();
+    if (mounted) setState(() => _screeningHeld = granted);
+    if (granted) {
+      await AnalyticsHelper.logPermissionGranted('call_screening_role');
+    }
   }
 
   Future<void> _loadPrefs() async {
@@ -70,6 +93,32 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(title: const Text('Configurações')),
       body: ListView(
         children: [
+          if (_screeningSupported) ...[
+            _SectionHeader(title: 'Status de proteção'),
+            ListTile(
+              leading: Icon(
+                _screeningHeld ? Icons.shield : Icons.shield_outlined,
+                color: _screeningHeld ? AppColors.verified : AppColors.suspicious,
+              ),
+              title: Text(
+                _screeningHeld ? '✅ Proteção ativa' : '⚠️ Proteção desativada',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: _screeningHeld ? AppColors.verified : AppColors.suspicious,
+                ),
+              ),
+              subtitle: _screeningHeld
+                  ? const Text('SemSpam está bloqueando spam em tempo real')
+                  : const Text('Toque em "Ativar agora" para habilitar o bloqueio automático'),
+              trailing: _screeningHeld
+                  ? null
+                  : TextButton(
+                      onPressed: _requestScreeningRole,
+                      child: const Text('Ativar agora'),
+                    ),
+            ),
+            const Divider(),
+          ],
           _SectionHeader(title: 'Proteção'),
           SwitchListTile(
             title: const Text('Aviso visual em chamadas suspeitas'),
@@ -111,6 +160,12 @@ class _SettingsPageState extends State<SettingsPage> {
             title: const Text('Termos de uso'),
             trailing: const Icon(Icons.open_in_new, size: 18),
             onTap: () => _openUrl(termsUrl),
+          ),
+          ListTile(
+            leading: const Icon(Icons.shield_outlined),
+            title: const Text('Configurações de privacidade'),
+            subtitle: const Text('Gerenciar consentimento de anúncios'),
+            onTap: () => ref.read(consentServiceProvider).showPrivacyOptionsForm(),
           ),
           const Divider(),
           _SectionHeader(title: 'Mais'),
