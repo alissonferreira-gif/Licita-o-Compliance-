@@ -113,6 +113,8 @@ flutterfire configure --project=SEU_PROJETO_ID
 
 Isso gera o arquivo `lib/firebase_options.dart` automaticamente.
 
+> ⚠️ **Obrigatório:** o arquivo `lib/firebase_options.dart` deve existir antes do primeiro build. Sem ele, `Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)` em `main.dart` falhará com erro de compilação. Rode `flutterfire configure` sempre que trocar de projeto Firebase.
+
 Coloque o `google-services.json` (baixado do Firebase Console) em:
 ```
 android/app/google-services.json
