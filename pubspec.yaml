@@ -1,0 +1,76 @@
+name: semspam
+description: SemSpam — Bloqueio inteligente de chamadas spam no Brasil
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.1.0
+  firebase_auth: ^5.1.0
+  cloud_firestore: ^5.1.0
+  firebase_messaging: ^15.0.0
+  firebase_analytics: ^11.1.0
+
+  # State management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Local storage
+  sqflite: ^2.3.3
+  path: ^1.9.0
+  shared_preferences: ^2.3.0
+
+  # AdMob
+  google_mobile_ads: ^5.1.0
+
+  # Utils
+  flutter_dotenv: ^5.1.0
+  intl: ^0.19.0
+  url_launcher: ^6.3.0
+  permission_handler: ^11.3.1
+  package_info_plus: ^8.0.0
+  screenshot: ^3.0.0
+  share_plus: ^10.0.0
+  connectivity_plus: ^6.0.3
+
+  # UI
+  smooth_page_indicator: ^1.1.0
+  flutter_svg: ^2.0.10+1
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  riverpod_generator: ^2.4.0
+  build_runner: ^2.4.9
+  json_annotation: ^4.9.0
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - .env
+    - assets/images/
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700

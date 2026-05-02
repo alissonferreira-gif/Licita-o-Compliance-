@@ -1,0 +1,124 @@
+{
+  "@@locale": "pt_BR",
+  "appName": "SemSpam",
+  "appTagline": "Bloqueio inteligente de spam",
+
+  "onboarding_title_1": "Bloqueie ligações chatas",
+  "onboarding_title_2": "Comunidade de proteção",
+  "onboarding_title_3": "Permissões necessárias",
+  "onboarding_btn_next": "Próximo",
+  "onboarding_btn_start": "Vamos começar!",
+  "onboarding_bullet_1_1": "Detecta spam automaticamente em tempo real",
+  "onboarding_bullet_1_2": "Banco colaborativo com milhares de números denunciados",
+  "onboarding_bullet_1_3": "Funciona em segundo plano, sem consumir bateria",
+  "onboarding_bullet_2_1": "Cada denúncia protege todos os brasileiros",
+  "onboarding_bullet_2_2": "Quanto mais usuários, mais inteligente fica",
+  "onboarding_bullet_2_3": "Seus dados são anônimos e nunca são vendidos",
+
+  "home_title": "SemSpam",
+  "home_protection_card_title": "Você foi protegido de {count} ligações esse mês",
+  "@home_protection_card_title": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "home_community_subtitle": "Junte-se a {count} brasileiros protegidos",
+  "@home_community_subtitle": {
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+  "home_btn_verify": "🔍  Verificar um número",
+  "home_recent_calls": "Chamadas recentes",
+  "home_empty_calls": "Nenhuma chamada registrada ainda",
+
+  "verify_title": "Verificar número",
+  "verify_input_label": "Número de telefone",
+  "verify_input_hint": "+55 (62) 99988-7766",
+  "verify_btn": "Verificar",
+  "verify_result_reports": "{count} pessoas reportaram esse número",
+  "@verify_result_reports": {
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+  "verify_result_type": "Tipo mais comum",
+  "verify_result_last_report": "Última denúncia",
+  "verify_btn_report": "Reportar também",
+
+  "report_title": "Denunciar número",
+  "report_type_label": "Tipo de chamada",
+  "report_comment_label": "Comentário (opcional)",
+  "report_comment_hint": "Descreva sua experiência com esse número...",
+  "report_btn_submit": "Enviar denúncia",
+  "report_type_telemarketing": "Telemarketing",
+  "report_type_fraud": "Golpe / Fraude",
+  "report_type_debt_collection": "Cobrança indevida",
+  "report_type_robocall": "Robôchamada",
+  "report_type_no_hangup": "Empresa que não desliga",
+  "report_type_other": "Outro",
+  "report_thanks_title": "Obrigado! Você ajudou a comunidade.",
+  "report_thanks_count": "Esse número agora tem {count} reportes.",
+  "@report_thanks_count": {
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+  "report_btn_share": "Compartilhar com amigos",
+
+  "settings_title": "Configurações",
+  "settings_section_protection": "Proteção",
+  "settings_show_overlay": "Aviso visual em chamadas suspeitas",
+  "settings_show_overlay_sub": "Mostra um overlay com o alerta durante a chamada",
+  "settings_auto_block": "Bloquear automaticamente",
+  "settings_auto_block_sub": "Bloqueia números com 5 ou mais denúncias",
+  "settings_notify_block": "Notificar ao bloquear",
+  "settings_notify_block_sub": "Notificação quando uma ligação for bloqueada",
+  "settings_privacy_policy": "Política de privacidade",
+  "settings_terms": "Termos de uso",
+  "settings_rate": "⭐  Avaliar SemSpam",
+  "settings_share": "📤  Compartilhar SemSpam",
+  "settings_support": "✉️  Suporte",
+
+  "stats_title": "Estatísticas",
+  "stats_my_protection": "Sua proteção esse mês",
+  "stats_blocked": "Chamadas bloqueadas",
+  "stats_detected": "Suspeitas detectadas",
+  "stats_saved_time": "Tempo economizado",
+  "stats_community": "Comunidade SemSpam",
+  "stats_active_users": "Usuários ativos",
+  "stats_numbers_reported": "Números reportados",
+  "stats_blocks_week": "Bloqueios essa semana",
+  "stats_btn_share": "Compartilhar minha proteção",
+
+  "badge_spam": "Spam confirmado",
+  "badge_suspicious": "Suspeito",
+  "badge_safe": "Sem reclamações",
+  "badge_verified": "Empresa verificada",
+  "badge_unknown": "Sem registros",
+
+  "error_invalid_number": "Número inválido. Use o formato (DDD) + número",
+  "error_send_report": "Erro ao enviar denúncia. Tente novamente.",
+  "error_load_history": "Não foi possível carregar o histórico. Puxe para atualizar.",
+
+  "time_just_now": "agora há pouco",
+  "time_minutes_ago": "há {count}min",
+  "@time_minutes_ago": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "time_hours_ago": "há {count}h",
+  "@time_hours_ago": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "time_yesterday": "ontem",
+  "time_days_ago": "há {count} dias",
+  "@time_days_ago": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
+}
