@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/constants.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/analytics_helper.dart';
-import '../../../modules/call_protection/presentation/pages/home_page.dart';
+import 'call_screening_page.dart';
 
 class PermissionsPage extends StatefulWidget {
   const PermissionsPage({super.key});
@@ -45,14 +43,10 @@ class _PermissionsPageState extends State<PermissionsPage> {
   }
 
   Future<void> _finishOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(AppConstants.prefOnboardingDone, true);
-    await AnalyticsHelper.logOnboardingCompleted();
     if (mounted) {
-      Navigator.pushAndRemoveUntil(
+      Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-        (_) => false,
+        MaterialPageRoute(builder: (_) => const CallScreeningPage()),
       );
     }
   }

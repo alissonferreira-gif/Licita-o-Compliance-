@@ -25,6 +25,7 @@ class AppConstants {
   static const String prefNotifyOnBlock = 'notify_on_block';
   static const String prefLastInterstitialAt = 'last_interstitial_at';
   static const String prefBlockedCount = 'blocked_count_month';
+  static const String prefCallScreeningGranted = 'call_screening_granted';
 
   // Score thresholds
   static const int scoreAutoBlockThreshold = 5;

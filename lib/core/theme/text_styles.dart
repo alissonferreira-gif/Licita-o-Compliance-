@@ -53,7 +53,6 @@ class AppTextStyles {
   static const TextStyle phoneNumber = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    fontFamily: 'monospace',
     letterSpacing: 1.0,
   );
 }
